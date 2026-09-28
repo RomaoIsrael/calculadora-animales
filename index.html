@@ -164,6 +164,46 @@ ul.tips li{margin-bottom:6px}
 .check input:checked+span{text-decoration:line-through;color:var(--suave)}
 .progreso{height:12px;background:var(--borde);border-radius:6px;overflow:hidden;margin:6px 0 12px}
 .progreso b{display:block;height:100%;background:var(--teal);transition:width .3s}
+/* Resumen */
+.hoja{border:2px solid var(--borde)}
+.hoja .enc{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:3px solid var(--verde);padding-bottom:8px;margin-bottom:10px}
+.hoja .enc b{color:var(--titulo);font-size:1.15rem}
+.hoja .enc span{color:var(--suave);font-size:.9rem}
+.hoja h4{margin:16px 0 6px;color:var(--titulo);font-size:1.02rem;border-bottom:1px solid var(--borde);padding-bottom:3px}
+.decision{border-radius:14px;padding:14px;text-align:center;border:3px solid}
+.decision .grande{font-size:1.5rem;font-weight:900;line-height:1.2}
+.decision.verde{background:var(--gana-bg);border-color:var(--teal)} .decision.verde .grande{color:var(--teal)}
+.decision.ambar{background:var(--duda-bg);border-color:var(--ambar)}
+.decision.rojo{background:var(--pierde-bg);border-color:var(--rojo)} .decision.rojo .grande{color:var(--rojo)}
+.decision p{margin:6px 0 0}
+.claves{list-style:none;margin:0;padding:0}
+.claves li{display:grid;grid-template-columns:30px 1fr;gap:6px;padding:7px 0;border-bottom:1px dashed var(--borde)}
+.claves li:last-child{border-bottom:0}
+.claves .s{font-size:1.25rem;line-height:1.2}
+.claves small{display:block;color:var(--suave);font-size:.9rem}
+table.datos{width:100%;border-collapse:collapse;font-size:.95rem}
+table.datos td{padding:6px 4px;border-bottom:1px solid var(--borde);vertical-align:top}
+table.datos td:last-child{text-align:right;font-weight:800;white-space:nowrap}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;background:var(--borde);color:var(--suave);border-radius:6px;padding:1px 5px;margin-left:4px;vertical-align:middle}
+.nums{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nums div{border:1px solid var(--borde);border-radius:10px;padding:8px}
+.nums b{display:block;font-size:1.2rem}
+ul.pend{margin:4px 0 0;padding-left:0;list-style:none;font-size:.93rem}
+ul.pend li{margin:3px 0}
+.hoja .pie{margin-top:14px;font-size:.8rem;color:var(--suave);border-top:1px solid var(--borde);padding-top:8px}
+.btn-print{background:var(--azul);color:#fff;width:100%;font-size:1.1rem;min-height:54px;margin-top:12px}
+@media print{
+  @page{margin:12mm}
+  #resumen{--bg:#fff;--card:#fff;--texto:#111;--suave:#444;--borde:#BBB;--titulo:#1F4E3D;--teal:#1E7F74;--rojo:#C00000;--ambar:#B07A00;
+    --gana-bg:#E3F4F1;--pierde-bg:#FBE6E6;--duda-bg:#FFF4D6;--verde:#1F4E3D}
+  body{background:#fff;color:#111;padding:0;font-size:11pt}
+  header.top,nav.abajo,.mini,footer,#imprimir,#resumen>h2,#resumen>p.muted,main>section:not(#resumen){display:none!important}
+  main.wrap{max-width:none;padding:0}
+  #resumen{margin:0;color:#111}
+  .hoja{box-shadow:none;border:0;padding:0;background:#fff}
+  .hoja h4,.decision,.claves li,table.datos tr,.nums{break-inside:avoid}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 footer{margin:28px 0 10px;font-size:.88rem;color:var(--suave);text-align:center}
 /* Barra inferior */
 nav.abajo{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--borde);display:flex;justify-content:center;z-index:20;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 10px rgba(0,0,0,.08)}
@@ -297,6 +337,13 @@ nav.abajo a.act .e{transform:scale(1.12)}
   <div class="muted" id="checkCount"></div>
   <div class="progreso"><b id="checkBar" style="width:0"></b></div>
   <ul class="check" id="check"></ul>
+</section>
+
+<section id="resumen">
+  <h2>📋 Resumen para decidir</h2>
+  <p class="muted" style="margin-top:0">Lo más importante en una sola hoja: si conviene o no, y por qué. Puedes imprimirlo o guardarlo como PDF para mostrarlo.</p>
+  <div class="card hoja" id="hoja"></div>
+  <button class="btn btn-print" id="imprimir" type="button">🖨️ Imprimir resumen</button>
 </section>
 
 <footer>
@@ -534,7 +581,7 @@ function sugeridos(a){ return Object.assign({}, a.d, {banco: BANCO_SUG}); }
 function animalActual(){ return ANIMALES.find(a => a.id === estado.animal); }
 function valoresActuales(){
   const a = animalActual(); const sug = sugeridos(a); const guard = estado.valores[a.id] || {};
-  const v = {}; const malos = {};
+  const v = {}; const malos = {}; const usados = {};
   for(const c of CAMPOS){
     const txt = c.k === "banco" ? estado.banco : guard[c.k];
     const p = parse(txt);
@@ -543,8 +590,9 @@ function valoresActuales(){
     if(ok && c.entero && Math.abs(p - Math.round(p)) > 1e-9) ok = false;
     if(!vacio && !ok) malos[c.k] = true;
     v[c.k] = ok ? p : sug[c.k];
+    if(!ok) usados[c.k] = true;
   }
-  return {v, malos};
+  return {v, malos, usados};
 }
 
 /* ================= UI: ANIMALES ================= */
@@ -608,9 +656,9 @@ document.addEventListener("click", e => {
 });
 
 /* ================= UI: RESULTADO ================= */
-let res = null, vAct = null;
+let res = null, vAct = null, usadosAct = {};
 function actualizar(){
-  const {v, malos} = valoresActuales(); vAct = v;
+  const {v, malos, usados} = valoresActuales(); vAct = v; usadosAct = usados;
   CAMPOS.forEach(c => { const el = $("c_" + c.k); if(el) el.classList.toggle("mal", !!malos[c.k]); });
   const r = res = calcular(v);
   $("vPones").textContent = fmt(r.pones);
@@ -652,6 +700,7 @@ function actualizar(){
   pintarMetas(v, r);
   pintarGraficos(r);
   pintarRanking();
+  pintarResumen();
   const a = animalActual();
   $("mini").textContent = `${a.emoji} ${icono} ${fmtSigno(r.gan)} · recuperas ${fmt(Math.round(r.por100))} de $100`;
 }
@@ -801,12 +850,91 @@ function contarCheck(){
   const n = CHECKLIST.filter((_, i) => estado.check[i]).length;
   $("checkCount").textContent = `${n} de ${CHECKLIST.length} listos` + (n === CHECKLIST.length ? " 🎉" : "");
   $("checkBar").style.width = (n / CHECKLIST.length * 100) + "%";
+  if(res) pintarResumen();
 }
 $("check").addEventListener("change", e => {
   const i = e.target.dataset.i; if(i == null) return;
   if(e.target.checked) estado.check[i] = true; else delete estado.check[i];
   guardar(); contarCheck();
 });
+
+/* ================= RESUMEN PARA DECIDIR ================= */
+const I_COMPRADOR = 9; // "Comprador asegurado antes de comprar." en CHECKLIST
+function pintarResumen(){
+  const a = animalActual(), r = res, v = vAct, u = usadosAct;
+  const si = "✅", no = "❌", pend = "⏳";
+  const decision = {
+    verde:["✅ SÍ CONVIENE", "Con estos datos, el negocio deja más que el banco y paga el riesgo."],
+    ambar:["⚠️ PIÉNSALO BIEN", "Ganas algo, pero poco para lo que puede salir mal. Mejora el precio de venta o baja gastos."],
+    rojo: ["❌ NO CONVIENE", r.gan < 0 ? "Con estos datos pierdes dinero." : "Con estos datos te conviene más dejar el dinero en el banco."]
+  }[r.nivel];
+  const comprador = !!estado.check[I_COMPRADOR];
+  const nListos = CHECKLIST.filter((_, i) => estado.check[i]).length;
+  const hoy = new Date().toLocaleDateString("es-EC", {day:"numeric", month:"long", year:"numeric"});
+  const sugTag = k => u[k] ? '<span class="tag">sugerido</span>' : "";
+  const fila = (txt, k, val) => `<tr><td>${txt}${sugTag(k)}</td><td>${val}</td></tr>`;
+  const clave = (ok, preg, det) => `<li><span class="s">${ok === null ? pend : ok ? si : no}</span><div><b>${preg}</b><small>${det}</small></div></li>`;
+  const pendientes = CHECKLIST.map((t, i) => `<li>${estado.check[i] ? "☑" : "☐"} ${t}</li>`).join("");
+
+  $("hoja").innerHTML = `
+    <div class="enc"><b>🐄 ¿Es buen negocio? · Resumen</b><span>${hoy}</span></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+      <span style="font-size:2.2rem">${a.emoji}</span>
+      <div><b>${a.nombre}</b> · ${num(v.n)} ${v.n === 1 ? "animal" : "animales"} · ${meses(v.meses)}<br><span class="muted">${a.que}</span></div>
+    </div>
+    <div class="decision ${r.nivel}">
+      <div class="grande">${decision[0]}</div>
+      <p>${decision[1]}</p>
+      <p class="muted">${frase(r)}</p>
+    </div>
+    ${!comprador ? `<p style="margin:8px 0 0"><b>⚠️ Importante:</b> aunque los números salgan bien, no compres sin tener el comprador asegurado.</p>` : ""}
+
+    <h4>1. Las 5 preguntas para decidir</h4>
+    <ul class="claves">
+      ${clave(r.por100 >= 100, "¿Recuperas todo lo que pones?", `De cada $100 que pones, recuperas ${fmt(Math.round(r.por100))}.`)}
+      ${clave(r.gan > 0, "¿Te queda ganancia al final?", `Al final te queda ${fmtSigno(r.gan)}.`)}
+      ${clave(r.gan >= r.bancoD, "¿Ganas más que dejando la plata en el banco?", `En una póliza al ${num(v.banco)}% ganarías ${fmt(r.bancoD)} sin riesgo.`)}
+      ${clave(r.gan >= r.exigeD, "¿La ganancia paga el riesgo?", `Para que valga la pena deberías ganar al menos ${fmt(r.exigeD)} (banco + 8% al año por el riesgo).`)}
+      ${clave(comprador ? true : null, "¿Tienes comprador asegurado?", comprador ? "Sí, marcado en la lista “Antes de comprar”." : "Pendiente: consíguelo antes de comprar.")}
+    </ul>
+
+    <h4>2. Los números en corto</h4>
+    <div class="nums">
+      <div>💵 Pones al inicio<b>${fmt(r.pones)}</b></div>
+      <div>📅 Gasto por mes<b>${fmt(r.gastoMes)}</b></div>
+      <div>🤲 Recibes en total<b>${fmt(r.recibes)}</b></div>
+      <div>✅ Al final te queda<b style="color:${r.gan < 0 ? "var(--rojo)" : "var(--teal)"}">${fmtSigno(r.gan)}</b></div>
+    </div>
+
+    <h4>3. Los datos que usaste</h4>
+    <table class="datos">
+      ${fila("Cantidad de animales", "n", num(v.n))}
+      ${fila("Precio de compra de cada uno", "compra", fmt(v.compra))}
+      ${fila("Gastos de una sola vez por animal", "inicial", fmt(v.inicial))}
+      ${fila("Gasto de mantener cada uno al mes", "mant", fmt(v.mant))}
+      ${fila("Meses antes de vender", "meses", num(v.meses))}
+      ${fila("Precio de venta de cada uno", "venta", fmt(v.venta))}
+      ${fila("Lo que deja cada uno al mes (leche, huevos…)", "ingreso", fmt(v.ingreso))}
+      ${fila("Interés del banco (póliza)", "banco", num(v.banco) + "% al año")}
+    </table>
+    ${Object.keys(u).length ? `<p class="muted" style="margin:6px 0 0">“sugerido” = no lo llenaste y se usó el valor de referencia. Confírmalo con precios reales de tu zona.</p>` : ""}
+
+    <h4>4. Para que valga la pena</h4>
+    <ul class="claves">
+      ${clave(v.venta >= r.minNoPerder - 0.005, `Vender cada animal en al menos ${fmt(r.minNoPerder)}`, `para no perder. Tú pusiste ${fmt(v.venta)}.`)}
+      ${clave(v.venta >= r.minBuena - 0.005, `Vender cada animal en al menos ${fmt(r.minBuena)}`, `para que sea buena inversión. Tú pusiste ${fmt(v.venta)}.`)}
+      ${clave(r.maxGasto >= 0 && v.mant <= r.maxGasto + 0.005, r.maxGasto < 0 ? "Gasto mensual: ni con $0 alcanza" : `Gastar máximo ${fmt(r.maxGasto)} al mes por animal`, `Tú pusiste ${fmt(v.mant)} al mes.`)}
+    </ul>
+
+    <h4>5. Antes de comprar (${nListos} de ${CHECKLIST.length} listos)</h4>
+    <ul class="pend">${pendientes}</ul>
+
+    <h4>💡 Consejo clave</h4>
+    <p style="margin:0">${a.consejo}</p>
+
+    <div class="pie">Valores de referencia investigados en septiembre de 2026 para Ecuador. Los precios cambian según zona y semana. Herramienta de análisis, no asesoría financiera.<br>Calculado en: ${location.origin + location.pathname}</div>`;
+}
+$("imprimir").addEventListener("click", () => { pintarResumen(); window.print(); });
 
 /* ================= COMPARTIR ================= */
 $("share").addEventListener("click", async () => {
