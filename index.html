@@ -69,7 +69,8 @@ button{font:inherit}
 /* Datos */
 .zona{border:3px solid var(--naranja);border-radius:18px;padding:16px;background:var(--card)}
 .zona h2{color:var(--naranja)}
-.campo{margin:0 0 16px}
+.campo{margin:0 0 16px;min-width:0;display:flex;flex-direction:column}
+.campo .inp{margin-top:auto}
 .campo label{display:block;font-weight:700;margin-bottom:2px}
 .campo .ayuda{display:block;color:var(--suave);font-size:.9rem;margin-bottom:6px}
 .inp{display:flex;align-items:center;border:2px solid var(--naranja);background:var(--campo);border-radius:12px;min-height:52px;padding:0 12px;gap:6px}
@@ -181,7 +182,7 @@ nav.abajo a.act .e{transform:scale(1.12)}
   .animal{flex-direction:column;justify-content:center;min-height:100px;padding:10px 4px;gap:4px}
   .animal .nom{text-align:center}
   .grafico .lienzo{height:320px}
-  .campos{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  .campos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px}
 }
 @media (max-width:370px){ .t .val{font-size:1.4rem} .animal .nom{font-size:.9rem} }
 @media (prefers-reduced-motion: reduce){ *{transition:none!important;scroll-behavior:auto!important} }

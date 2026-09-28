@@ -1,5 +1,5 @@
 /* Service worker: guarda la app para que funcione sin conexión. */
-const CACHE = "es-buen-negocio-v1";
+const CACHE = "es-buen-negocio-v2";
 const ARCHIVOS = [
   "./",
   "./index.html",
