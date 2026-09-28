@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>¿Es buen negocio?</title>
+<meta name="description" content="Calculadora sencilla para saber si comprar animales de granja en Ecuador es buen negocio.">
+<meta name="theme-color" content="#1F4E3D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="¿Es buen negocio?">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta property="og:title" content="¿Es buen negocio?">
+<meta property="og:description" content="Calcula si comprar animales de granja en Ecuador te conviene.">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+<style>
+:root{
+  --verde:#1F4E3D; --naranja:#E76F51; --amarillo:#FFF3B0; --azul:#1D3557;
+  --teal:#2A9D8F; --rojo:#C00000; --morado:#6A4C93; --ambar:#E9A100;
+  --bg:#F6F4EE; --card:#FFFFFF; --texto:#1B1B1B; --suave:#555B61; --borde:#DDD8CC;
+  --campo:#FFF3B0; --campo-texto:#1B1B1B; --sombra:0 2px 10px rgba(0,0,0,.07);
+  --gana-bg:#E3F4F1; --pierde-bg:#FBE6E6; --duda-bg:#FFF4D6; --morado-bg:#F0EBF7;
+  --titulo:#1F4E3D; --resultado:#1D3557;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121614; --card:#1C221F; --texto:#F1F1EC; --suave:#B6BDB8; --borde:#34403A;
+    --campo:#3A3520; --campo-texto:#FFF7D1; --sombra:0 2px 10px rgba(0,0,0,.4);
+    --gana-bg:#16302C; --pierde-bg:#3A1A1A; --duda-bg:#3A3217; --morado-bg:#2A2238;
+    --titulo:#8FD3B5; --resultado:#A8C5F0; --rojo:#FF6B6B; --teal:#3CC2B2; --morado:#B79AE6;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121614; --card:#1C221F; --texto:#F1F1EC; --suave:#B6BDB8; --borde:#34403A;
+  --campo:#3A3520; --campo-texto:#FFF7D1; --sombra:0 2px 10px rgba(0,0,0,.4);
+  --gana-bg:#16302C; --pierde-bg:#3A1A1A; --duda-bg:#3A3217; --morado-bg:#2A2238;
+  --titulo:#8FD3B5; --resultado:#A8C5F0; --rojo:#FF6B6B; --teal:#3CC2B2; --morado:#B79AE6;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--texto);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:17px;line-height:1.45;padding-bottom:calc(84px + env(safe-area-inset-bottom));overflow-x:hidden}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+header.top{background:var(--verde);color:#fff;padding:18px 0 22px;text-align:center}
+header.top h1{margin:0;font-size:1.75rem;letter-spacing:.2px}
+header.top p{margin:6px 0 0;opacity:.92;font-size:1rem}
+section{scroll-margin-top:12px;margin:22px 0}
+h2{color:var(--titulo);font-size:1.35rem;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+h3{margin:0 0 8px;font-size:1.1rem}
+.card{background:var(--card);border-radius:16px;box-shadow:var(--sombra);padding:16px}
+.paso{display:inline-block;background:var(--verde);color:#fff;border-radius:999px;font-size:.8rem;padding:3px 10px;font-weight:700;letter-spacing:.3px;margin-bottom:6px}
+.muted{color:var(--suave);font-size:.95rem}
+button{font:inherit}
+/* Animales */
+.animales{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.animal{min-height:64px;border:3px solid transparent;background:var(--card);border-radius:16px;box-shadow:var(--sombra);cursor:pointer;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;padding:8px 10px;color:var(--texto);transition:transform .15s,border-color .15s,background .15s}
+.animal .emo{font-size:2.1rem;line-height:1}
+.animal .nom{font-size:.98rem;font-weight:700;text-align:left;line-height:1.15}
+.animal:active{transform:scale(.96)}
+.animal[aria-pressed="true"]{border-color:var(--verde);background:var(--gana-bg)}
+:root[data-theme="dark"] .animal[aria-pressed="true"]{border-color:var(--titulo)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .animal[aria-pressed="true"]{border-color:var(--titulo)}}
+.explica{margin-top:12px;display:flex;gap:12px;align-items:flex-start}
+.explica .big{font-size:2.6rem;line-height:1}
+.explica b{color:var(--titulo)}
+/* Datos */
+.zona{border:3px solid var(--naranja);border-radius:18px;padding:16px;background:var(--card)}
+.zona h2{color:var(--naranja)}
+.campo{margin:0 0 16px}
+.campo label{display:block;font-weight:700;margin-bottom:2px}
+.campo .ayuda{display:block;color:var(--suave);font-size:.9rem;margin-bottom:6px}
+.inp{display:flex;align-items:center;border:2px solid var(--naranja);background:var(--campo);border-radius:12px;min-height:52px;padding:0 12px;gap:6px}
+.inp:focus-within{box-shadow:0 0 0 3px rgba(231,111,81,.35)}
+.inp span{font-weight:700;color:var(--campo-texto);font-size:1.1rem}
+.inp input{flex:1;min-width:0;border:0;background:transparent;font-size:1.25rem;font-weight:700;color:var(--campo-texto);padding:10px 0;outline:none}
+.inp input::placeholder{color:var(--campo-texto);opacity:.5;font-weight:500}
+.campo .err{color:var(--rojo);font-size:.9rem;margin-top:4px;display:none}
+.campo.mal .err{display:block}
+.campo.mal .inp{border-color:var(--rojo)}
+.btn{min-height:48px;border-radius:12px;border:0;padding:10px 16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:1rem}
+.btn-sec{background:transparent;border:2px solid var(--naranja);color:var(--naranja);width:100%}
+.btn-wa{background:#25D366;color:#073B1A;width:100%;font-size:1.1rem;min-height:54px}
+.info{display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px;border:0;background:transparent;color:var(--resultado);font-size:1.05rem;cursor:pointer;padding:0 4px;vertical-align:middle}
+.tip{display:none;background:var(--morado-bg);border-left:4px solid var(--morado);border-radius:8px;padding:8px 10px;font-size:.92rem;margin:6px 0;font-weight:400;color:var(--texto)}
+.tip.open{display:block}
+/* Resultado */
+#resultado h2{color:var(--resultado)}
+.fade{transition:opacity .25s ease, transform .25s ease}
+.fading{opacity:.15;transform:translateY(6px)}
+.tarjetas{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.t{background:var(--card);border-radius:16px;box-shadow:var(--sombra);padding:12px;border-top:5px solid var(--resultado);min-width:0}
+.t .ico{font-size:1.5rem}
+.t .lab{font-size:.9rem;color:var(--suave);font-weight:600}
+.t .val{font-size:1.65rem;font-weight:800;color:var(--resultado);line-height:1.15;overflow-wrap:anywhere}
+.t .sub{font-size:.85rem;color:var(--suave)}
+.t.gana{border-top-color:var(--teal);background:var(--gana-bg)} .t.gana .val{color:var(--teal)}
+.t.pierde{border-top-color:var(--rojo);background:var(--pierde-bg)} .t.pierde .val{color:var(--rojo)}
+.semaforo{margin-top:14px;display:flex;gap:14px;align-items:center;border-radius:18px;padding:16px;box-shadow:var(--sombra);background:var(--card);border:3px solid var(--borde)}
+.semaforo.rojo{border-color:var(--rojo);background:var(--pierde-bg)}
+.semaforo.ambar{border-color:var(--ambar);background:var(--duda-bg)}
+.semaforo.verde{border-color:var(--teal);background:var(--gana-bg)}
+.luces{background:#222;border-radius:18px;padding:8px 7px;display:flex;flex-direction:column;gap:7px;flex:0 0 auto}
+.luz{width:34px;height:34px;border-radius:50%;opacity:.18;transition:opacity .3s, box-shadow .3s}
+.luz.r{background:#E53935}.luz.a{background:#FFC107}.luz.v{background:#2ECC71}
+.luz.on{opacity:1;box-shadow:0 0 14px currentColor}
+.luz.r.on{color:#E53935}.luz.a.on{color:#FFC107}.luz.v.on{color:#2ECC71}
+.veredicto{font-size:1.2rem;font-weight:800;line-height:1.25}
+.semaforo.rojo .veredicto{color:var(--rojo)} .semaforo.ambar .veredicto{color:var(--texto)} .semaforo.verde .veredicto{color:var(--teal)}
+.frase{margin-top:6px;font-size:1rem}
+.comparar{margin-top:10px;font-size:.95rem}
+.comparar div{margin:4px 0}
+.grafico{margin-top:14px}
+.grafico .lienzo{position:relative;height:260px}
+.leyenda{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.88rem;color:var(--suave);margin-top:8px}
+.leyenda i{display:inline-block;width:22px;height:0;border-top:4px solid;vertical-align:middle;margin-right:5px}
+.nochart{padding:30px 10px;text-align:center;color:var(--suave)}
+details.como{margin-top:14px}
+summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center;gap:8px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"▾";margin-left:auto;transition:transform .2s;color:var(--suave)}
+details[open]>summary::after{transform:rotate(180deg)}
+.formulas{font-size:.93rem}
+.formulas p{margin:6px 0}
+/* Qué tendría que pasar */
+#mejorar h2{color:var(--morado)}
+.meta{display:flex;gap:12px;align-items:flex-start;background:var(--morado-bg);border-left:6px solid var(--morado);border-radius:14px;padding:12px;margin-bottom:10px}
+.meta .ico{font-size:1.7rem;line-height:1}
+.meta .num{font-size:1.5rem;font-weight:800;color:var(--morado)}
+.meta .hoy{font-size:.9rem;color:var(--suave)}
+.ok{color:var(--teal);font-weight:700}
+.no{color:var(--rojo);font-weight:700}
+.consejo{background:var(--duda-bg);border:2px dashed var(--ambar);border-radius:14px;padding:12px;margin-top:6px}
+/* Ranking */
+.rank{list-style:none;margin:0;padding:0}
+.rank li{margin:0 0 8px}
+.rank button{width:100%;display:grid;grid-template-columns:26px 32px 1fr 86px;align-items:center;gap:8px;background:var(--card);border:2px solid transparent;border-radius:12px;padding:8px 10px;min-height:56px;cursor:pointer;color:var(--texto);text-align:left;box-shadow:var(--sombra)}
+.rank button.sel{border-color:var(--resultado);background:var(--gana-bg)}
+.rank .pos{font-weight:800;color:var(--suave);text-align:center}
+.rank .emo{font-size:1.5rem}
+.rank .nm{font-weight:600;font-size:.95rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barra{display:block;height:12px;background:var(--borde);border-radius:6px;margin-top:4px;position:relative;overflow:hidden}
+.barra b{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.barra .cien{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--texto);opacity:.55}
+.rank .der{text-align:right;font-weight:800;white-space:nowrap}
+.rank .der small{display:block;font-weight:600;font-size:.75rem;color:var(--suave)}
+/* Recomendaciones */
+details.acc{background:var(--card);border-radius:14px;box-shadow:var(--sombra);padding:4px 14px;margin-bottom:10px}
+details.acc[open]{padding-bottom:12px}
+.reglas{margin:0;padding-left:0;list-style:none;counter-reset:r}
+.reglas li{counter-increment:r;margin:0 0 10px;padding-left:36px;position:relative}
+.reglas li::before{content:counter(r);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--verde);color:#fff;font-weight:800;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.estrellas{white-space:nowrap}
+ul.tips{margin:4px 0 0;padding-left:20px}
+ul.tips li{margin-bottom:6px}
+/* Checklist */
+.check{list-style:none;margin:0;padding:0}
+.check li{margin:0 0 6px}
+.check label{display:flex;gap:12px;align-items:flex-start;background:var(--card);border-radius:12px;padding:12px;min-height:48px;cursor:pointer;box-shadow:var(--sombra)}
+.check input{width:24px;height:24px;flex:0 0 auto;accent-color:var(--teal);margin:0}
+.check input:checked+span{text-decoration:line-through;color:var(--suave)}
+.progreso{height:12px;background:var(--borde);border-radius:6px;overflow:hidden;margin:6px 0 12px}
+.progreso b{display:block;height:100%;background:var(--teal);transition:width .3s}
+footer{margin:28px 0 10px;font-size:.88rem;color:var(--suave);text-align:center}
+/* Barra inferior */
+nav.abajo{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--borde);display:flex;justify-content:center;z-index:20;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+nav.abajo .in{display:grid;grid-template-columns:repeat(5,1fr);width:100%;max-width:760px}
+nav.abajo a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60px;text-decoration:none;color:var(--suave);font-size:.72rem;font-weight:600;gap:2px}
+nav.abajo a .e{font-size:1.35rem;line-height:1}
+nav.abajo a.act{color:var(--titulo)}
+nav.abajo a.act .e{transform:scale(1.12)}
+.mini{position:fixed;left:50%;transform:translate(-50%,120%);bottom:calc(68px + env(safe-area-inset-bottom));z-index:19;background:var(--resultado);color:#fff;border-radius:999px;padding:8px 16px;font-weight:700;font-size:.95rem;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:transform .25s;white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis;text-decoration:none}
+:root[data-theme="dark"] .mini{color:#10151F}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mini{color:#10151F}}
+.mini.show{transform:translate(-50%,0)}
+@media (min-width:640px){
+  .tarjetas{grid-template-columns:repeat(4,1fr)}
+  .animales{grid-template-columns:repeat(5,1fr)}
+  .animal{flex-direction:column;justify-content:center;min-height:100px;padding:10px 4px;gap:4px}
+  .animal .nom{text-align:center}
+  .grafico .lienzo{height:320px}
+  .campos{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+}
+@media (max-width:370px){ .t .val{font-size:1.4rem} .animal .nom{font-size:.9rem} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;scroll-behavior:auto!important} }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>🐄 ¿Es buen negocio?</h1>
+    <p>Calcula si comprar animales de granja en Ecuador te conviene, en palabras simples.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="animal">
+  <span class="paso">PASO 1</span>
+  <h2>🐾 Elige el animal</h2>
+  <div class="animales" id="animales" role="group" aria-label="Animales"></div>
+  <div class="card explica fade" id="explica"></div>
+</section>
+
+<section id="datos">
+  <div class="zona">
+    <span class="paso" style="background:var(--naranja)">PASO 2</span>
+    <h2>✍️ Llena tus datos aquí</h2>
+    <p class="muted" style="margin-top:0">Ya pusimos valores sugeridos (en gris). Si no sabes un dato, déjalo vacío y usamos el sugerido. El resultado cambia solo mientras escribes.</p>
+    <div class="campos" id="campos"></div>
+    <button class="btn btn-sec" id="reset" type="button">↺ Volver a valores sugeridos</button>
+  </div>
+</section>
+
+<section id="resultado">
+  <span class="paso" style="background:var(--azul)">RESULTADO</span>
+  <h2>📊 ¿Qué pasaría con tu dinero?</h2>
+  <div class="fade" id="resBox">
+    <div class="tarjetas">
+      <div class="t"><div class="ico">💵</div><div class="lab">Pones al inicio</div><div class="val" id="vPones"></div><div class="sub">compra + gastos de una sola vez</div></div>
+      <div class="t"><div class="ico">📅</div><div class="lab">Gasto por mes</div><div class="val" id="vMes"></div><div class="sub" id="vSem"></div></div>
+      <div class="t" id="tQueda"><div class="ico">✅</div><div class="lab">Al final te queda</div><div class="val" id="vQueda"></div><div class="sub" id="vQuedaSub"></div></div>
+      <div class="t" id="tPor100"><div class="ico">🔁</div><div class="lab">De cada $100 recuperas</div><div class="val" id="vPor100"></div><div class="sub" id="vPor100Sub"></div></div>
+    </div>
+
+    <div class="semaforo" id="semaforo" aria-live="polite">
+      <div class="luces" aria-hidden="true"><div class="luz r"></div><div class="luz a"></div><div class="luz v"></div></div>
+      <div>
+        <div class="veredicto" id="veredicto"></div>
+        <div class="frase" id="frase"></div>
+      </div>
+    </div>
+    <div class="card comparar" id="comparar" style="margin-top:10px"></div>
+
+    <div class="card grafico">
+      <h3>📈 Tu dinero mes a mes</h3>
+      <p class="muted" style="margin:0 0 8px">Cuánto has ganado (arriba de cero, verde) o cuánto te falta recuperar (abajo de cero, rojo) en cada mes.</p>
+      <div class="lienzo"><canvas id="gLinea" aria-label="Gráfico de tu dinero mes a mes"></canvas></div>
+      <div class="leyenda">
+        <span><i style="border-color:var(--teal)"></i>Tu negocio</span>
+        <span><i style="border-top-style:dashed;border-color:var(--resultado)"></i>Si lo pones en el banco</span>
+        <span><i style="border-color:var(--suave);border-top-width:2px"></i>Cero (ni ganas ni pierdes)</span>
+      </div>
+    </div>
+
+    <div class="card grafico">
+      <h3>💸 ¿A dónde va tu dinero?</h3>
+      <div class="lienzo" style="height:240px"><canvas id="gBarras" aria-label="Gráfico de a dónde va tu dinero"></canvas></div>
+    </div>
+
+    <details class="card como">
+      <summary>🧮 ¿Cómo se calcula?</summary>
+      <div class="formulas" id="formulas"></div>
+    </details>
+
+    <button class="btn btn-wa" id="share" type="button" style="margin-top:14px">📲 Compartir por WhatsApp</button>
+  </div>
+</section>
+
+<section id="mejorar">
+  <h2>🎯 ¿Qué tendría que pasar para que valga la pena?</h2>
+  <div id="metas" class="fade"></div>
+  <div class="consejo" id="consejo"></div>
+</section>
+
+<section id="ranking">
+  <h2>🏆 Ranking de animales</h2>
+  <p class="muted" style="margin-top:0">Ordenados por “de cada $100 recuperas”, con los valores sugeridos y banco al 6%. La rayita marca $100 (recuperas lo mismo que pusiste). Toca uno para elegirlo.</p>
+  <ol class="rank" id="rank"></ol>
+</section>
+
+<section id="consejos">
+  <h2>💡 Recomendaciones</h2>
+  <details class="acc" open>
+    <summary>⭐ Las 12 reglas de oro</summary>
+    <p class="muted" style="margin-top:0">Las estrellas dicen cuánto pesa cada regla en tu ganancia: ⭐⭐⭐ mucho, ⭐ algo.</p>
+    <ol class="reglas" id="reglas"></ol>
+  </details>
+  <details class="acc">
+    <summary>🚀 ¿Cuál conviene para empezar?</summary>
+    <ul class="tips">
+      <li><b>Poco dinero y poco espacio:</b> cuyes o gallinas.</li>
+      <li><b>Con pasto o forraje propio:</b> cuyes, borregos o toretes.</li>
+      <li><b>Si vives lejos del animal:</b> modalidad “al partir” con contrato escrito <button class="info" type="button" data-tip="tAlPartir" aria-label="¿Qué es al partir?">ⓘ</button>.
+        <div class="tip" id="tAlPartir"><b>“Al partir”</b>: tú pones el animal y otra persona lo cuida en su terreno; al vender, se reparten la ganancia según lo que acordaron. Siempre por escrito.</div></li>
+      <li><b>Si quieres ingreso cada mes:</b> gallinas o vaca/cabra lechera, pero con comprador fijo.</li>
+      <li><b>Evita empezar</b> con caballos o con muchos animales sin experiencia.</li>
+    </ul>
+  </details>
+  <div id="porAnimal"></div>
+
+  <h2 style="margin-top:22px" id="checklistT">✅ Antes de comprar</h2>
+  <p class="muted" style="margin-top:0">Marca lo que ya tienes listo. Se guarda en tu teléfono.</p>
+  <div class="muted" id="checkCount"></div>
+  <div class="progreso"><b id="checkBar" style="width:0"></b></div>
+  <ul class="check" id="check"></ul>
+</section>
+
+<footer>
+  Valores de referencia investigados en septiembre de 2026 para Ecuador. Los precios cambian según zona y semana. Herramienta de análisis, no asesoría financiera.
+</footer>
+</main>
+
+<a class="mini" id="mini" href="#resultado"></a>
+
+<nav class="abajo" aria-label="Secciones">
+  <div class="in">
+    <a href="#animal" data-s="animal"><span class="e">🐾</span>Animal</a>
+    <a href="#datos" data-s="datos"><span class="e">✍️</span>Datos</a>
+    <a href="#resultado" data-s="resultado"><span class="e">📊</span>Resultado</a>
+    <a href="#ranking" data-s="ranking"><span class="e">🏆</span>Ranking</a>
+    <a href="#consejos" data-s="consejos"><span class="e">💡</span>Consejos</a>
+  </div>
+</nav>
+
+<script>
+"use strict";
+/* ================= DATOS ================= */
+const PRIMA = 0.08;       // prima de riesgo anual (constante interna)
+const BANCO_SUG = 6;      // % anual sugerido
+
+const ANIMALES = [
+  {id:"torete", emoji:"🐂", nombre:"Torete de engorde", corto:"Torete",
+   d:{n:1, compra:634, inicial:87, mant:35, meses:14, venta:1036, ingreso:0},
+   que:"Comprarlo flaco (~250 kg), engordarlo y venderlo en pie (~450 kg).",
+   consejo:"La clave es que engorde más de 0,6 kg por día con buen pasto y sal mineral, y comprar flaco en época seca cuando está barato.",
+   tips:["Pésalo al comprar y cada 2–3 meses: debe ganar al menos 18 kg al mes. Si no, revisa pasto, parásitos y agua.",
+         "Desparasítalo al llegar y cada 3–4 meses; vacúnalo contra aftosa en las campañas de Agrocalidad.",
+         "Rota los potreros (divide con cerca eléctrica) para que el pasto rebrote y siempre haya comida.",
+         "Sal mineral y agua limpia todo el tiempo: es lo más barato que más engorda.",
+         "Vende en báscula o en ferias con varios compradores; no vendas “al ojo” al primer intermediario."]},
+  {id:"vaca", emoji:"🐄", nombre:"Vaca lechera", corto:"Vaca lechera",
+   d:{n:1, compra:1500, inicial:187, mant:102, meses:24, venta:1350, ingreso:98},
+   que:"Comprar vaca recién parida; vender leche y crías; al final se vende o se queda la vaca.",
+   consejo:"Necesita dar más de ~9 litros al día y tener comprador fijo. Si ordeñas tú o alguien de confianza sin pagar ordeñador, mejora mucho.",
+   tips:["Antes de pagar, pide pruebas de brucelosis y tuberculosis, y mira un ordeño completo para contar los litros.",
+         "Asegura el comprador (centro de acopio, quesera o vecinos): pregunta precio por litro y cada cuánto pagan.",
+         "Higiene al ordeñar (lavar y secar pezones, ordeñar completo) para evitar mastitis, que baja la leche.",
+         "Planifica la próxima preñez (inseminación o toro) para tener una cría al año.",
+         "Pasto bueno, sal mineral y mucha agua: sin agua no hay leche."]},
+  {id:"caballo", emoji:"🐎", nombre:"Caballo", corto:"Caballo",
+   d:{n:1, compra:900, inicial:173, mant:139, meses:8, venta:1900, ingreso:0},
+   que:"Comprar sin domar, domarlo y venderlo.",
+   consejo:"Casi siempre es más gusto que negocio; solo conviene con un comprador que pague bien por él domado.",
+   tips:["Pide la prueba de anemia infecciosa equina y que un veterinario revise cascos, dientes y patas.",
+         "La doma debe hacerla alguien con experiencia: un caballo mal domado vale menos que uno sin domar.",
+         "Herraje, desparasitación y vacunas son gastos fijos: inclúyelos en el gasto mensual.",
+         "Consigue el comprador (hacienda, escuela de equitación, chalán serio) antes de comprar."]},
+  {id:"gallina", emoji:"🐔", nombre:"Gallina ponedora (huevos)", corto:"Gallina",
+   d:{n:50, compra:7, inicial:3, mant:2.5, meses:14, venta:4, ingreso:2.8},
+   que:"Comprar pollonas listas para poner, vender huevos ~14 meses y al final vender la gallina.",
+   consejo:"El margen es pequeño: gana quien vende directo al barrio/tienda y no desperdicia alimento. El precio del huevo sube y baja mucho.",
+   tips:["Compra pollonas ya vacunadas (Newcastle, Marek, bronquitis) a un proveedor conocido.",
+         "Unas 16 horas de luz al día (natural + foco) y agua limpia siempre mantienen la postura.",
+         "Mide el balanceado (unos 110–120 g por gallina al día): el alimento regado se come tu ganancia.",
+         "Recoge huevos 2 veces al día, guárdalos frescos y véndelos por cubeta a clientes fijos.",
+         "Cuando baje la postura, vende las gallinas como gallina de campo para caldo."]},
+  {id:"pollo", emoji:"🐥", nombre:"Pollo de engorde", corto:"Pollo",
+   d:{n:100, compra:0.8, inicial:0.4, mant:1.5, meses:2, venta:5, ingreso:0},
+   que:"Comprar pollitos bebé, engordarlos ~7 semanas y venderlos.",
+   consejo:"Ciclos cortos (5–6 al año). Ganas más vendiendo pelado a clientes directos que en pie a intermediarios.",
+   tips:["La primera semana necesitan calor (criadora a ~32 °C) y agua con electrolitos al llegar.",
+         "Vacuna contra Newcastle y Gumboro según indique el proveedor de los pollitos.",
+         "Cama seca (tamo de arroz o viruta) y buena ventilación evitan enfermedades.",
+         "Ten a tus clientes antes de que estén listos: cada semana extra comen y ganas menos.",
+         "Limpia, desinfecta y deja descansar el galpón 1–2 semanas entre lotes."]},
+  {id:"chancho", emoji:"🐖", nombre:"Chancho de engorde", corto:"Chancho",
+   d:{n:2, compra:70, inicial:15, mant:30, meses:5, venta:260, ingreso:0},
+   que:"Comprar lechón destetado, engordarlo ~5 meses y venderlo (~100 kg).",
+   consejo:"El alimento es el 80% del costo: mezcla balanceado con yuca, plátano de rechazo o suero de leche. No uses desperdicios sin cocinar.",
+   tips:["Compra lechones de unas 8 semanas, de madre sana, ya desparasitados y con vacuna contra peste porcina.",
+         "Corral con piso de cemento con desnivel para lavar, sombra y agua siempre.",
+         "Nunca des desperdicios de comida crudos: transmiten enfermedades como la peste porcina.",
+         "Véndelo al llegar a ~100 kg y por peso: después de ese peso cada kilo te cuesta más.",
+         "El estiércol sirve para biogás o abono: no lo botes al río."]},
+  {id:"borrego", emoji:"🐑", nombre:"Borrego (ovino)", corto:"Borrego",
+   d:{n:5, compra:60, inicial:15, mant:6.5, meses:6, venta:120, ingreso:0},
+   que:"Comprar corderos destetados y venderlos gordos (~40 kg).",
+   consejo:"Aprovecha pastos que la vaca no usa, desparasita seguido y vende antes de fiestas.",
+   tips:["Los parásitos son la primera causa de pérdidas: desparasita cada 2–3 meses.",
+         "Revisa y recorta las pezuñas; mantén el corral seco para evitar cojeras.",
+         "Engordan bien en rastrojos después de cosecha y en pastos donde la vaca no entra.",
+         "Vende antes de Navidad y de las fiestas del pueblo, cuando sube el precio."]},
+  {id:"cuy", emoji:"🐹", nombre:"Cuy", corto:"Cuy",
+   d:{n:50, compra:3, inicial:1, mant:0.8, meses:3, venta:8, ingreso:0},
+   que:"Comprar cuyes destetados, engordarlos ~3 meses y venderlos vivos.",
+   consejo:"Con forraje propio el costo casi desaparece. Mejor aún: tener reproductoras y vender las crías.",
+   tips:["Pozas limpias y secas, sin corrientes de aire; cambia la cama cada semana.",
+         "Da forraje (alfalfa, rye grass, maralfalfa) oreado, nunca mojado: el forraje mojado causa timpanismo (hinchazón).",
+         "Separa machos y hembras al destete para que no peleen ni se preñen.",
+         "Vende a asaderos, en ferias y antes de fiestas; el cuy grande y parejo se paga mejor.",
+         "Controla piojos y pulgas, y lávate las manos: la higiene evita la salmonela."]},
+  {id:"conejo", emoji:"🐇", nombre:"Conejo", corto:"Conejo",
+   d:{n:20, compra:5, inicial:2, mant:2, meses:3, venta:13, ingreso:0},
+   que:"Comprar gazapos destetados, engordarlos ~3 meses y venderlos.",
+   consejo:"Rinde más criando tú los gazapos. Busca compradores fijos antes: el consumo es bajo en Ecuador.",
+   tips:["Jaulas elevadas, limpias y en lugar fresco: el calor los enferma.",
+         "Forraje + balanceado; los cambios bruscos de comida les dan diarrea.",
+         "Consigue compradores fijos (restaurantes, ferias, vecinos) antes de comprar.",
+         "El estiércol de conejo es excelente abono y se vende bien a quienes tienen huerto."]},
+  {id:"cabra", emoji:"🐐", nombre:"Cabra lechera", corto:"Cabra",
+   d:{n:2, compra:150, inicial:20, mant:10, meses:12, venta:120, ingreso:18},
+   que:"Comprar cabra en producción; vender leche (o queso) y cabritos.",
+   consejo:"Hacer queso de cabra y venderlo directo suele ser lo que la hace rentable.",
+   tips:["Pide prueba de brucelosis antes de comprar; hierve o pasteuriza la leche antes de venderla o hacer queso.",
+         "Necesitan techo seco: no toleran la lluvia ni el barro.",
+         "Ramonean: aprovechan arbustos y rastrojos, lo que baja el gasto de comida.",
+         "Para vender queso en tiendas necesitas notificación sanitaria de ARCSA; a vecinos y ferias puedes empezar directo."]}
+];
+
+const CAMPOS = [
+  {k:"n",       lab:"¿Cuántos animales vas a comprar?", ayuda:"", pre:"", suf:"animales", min:1, entero:true},
+  {k:"compra",  lab:"¿Cuánto pagas por CADA animal?", ayuda:"El precio de compra de uno solo.", pre:"$", suf:""},
+  {k:"inicial", lab:"Gastos de UNA SOLA VEZ por animal", ayuda:"Veterinario, flete, jaula o corral, papeles.", pre:"$", suf:""},
+  {k:"mant",    lab:"¿Cuánto cuesta mantener CADA animal al mes?", ayuda:"Comida, vacunas, veterinario, espacio.", pre:"$", suf:"al mes"},
+  {k:"meses",   lab:"¿Cuántos meses lo tendrás antes de vender?", ayuda:"", pre:"", suf:"meses", min:0.1},
+  {k:"venta",   lab:"¿En cuánto venderás CADA animal al final?", ayuda:"Lo que te llega a la mano, ya sin comisiones.", pre:"$", suf:""},
+  {k:"ingreso", lab:"¿Cuánto te deja CADA animal al mes mientras lo tienes?", ayuda:"Leche, huevos, crías. Si no da nada, deja 0.", pre:"$", suf:"al mes"},
+  {k:"banco",   lab:"¿Qué interés al año te paga el banco por una póliza?", ayuda:"", pre:"", suf:"% al año", tip:"Una <b>póliza</b> (depósito a plazo) es dejar tu dinero guardado en el banco por un tiempo. El banco te paga un porcentaje al año sin que corras riesgo. Sirve para comparar: si el animal te deja menos que el banco, mejor no complicarte."}
+];
+
+const REGLAS = [
+  ["Produce tu propia comida (pasto, forraje, maíz, yuca): la comida es el 50–80% del gasto.", 3],
+  ["Vende directo al consumidor. Ej.: huevo en granja $3,40 la cubeta vs $4,10–4,50 en tienda (ago–sep 2026); pelado, faenado o en queso vale más que en pie.", 3],
+  ["Ten el comprador ANTES de comprar el animal.", 3],
+  ["Compra barato y vende caro: compra en época seca y vende antes de fiestas.", 2],
+  ["Empieza pequeño y aprende.", 2],
+  ["Cría en vez de solo comprar y engordar (hembras reproductoras).", 2],
+  ["Prevenir es más barato que curar (vacunas, desparasitación).", 2],
+  ["Compra y vende por peso, en báscula.", 2],
+  ["Júntate con vecinos o asociaciones para comprar y vender en grupo.", 1],
+  ["Usa el crédito y el seguro del Estado: BanEcuador 7x7 (7% anual, hasta 7 años) y seguro con subsidio del 60–80% de la prima.", 1],
+  ["Anota cada gasto y cada venta.", 1],
+  ["Aprovecha los desechos: el estiércol se vende como abono.", 1]
+];
+
+const CHECKLIST = [
+  "Bovinos: Certificado Zoosanitario de Movilización (guía de Agrocalidad) y certificado de vacuna contra aftosa.",
+  "Factura o contrato de compraventa (vendedor, número de animales, sexo, color, marca, peso).",
+  "Revisión del veterinario antes de pagar: brucelosis/TB en vacas, anemia infecciosa en caballos, vacunas en cerdos y aves.",
+  "Compra y vende pesado en báscula.",
+  "Contrato escrito con el dueño del potrero o galpón.",
+  "Registro del predio en Agrocalidad (oficina o sistema SIFAE); consultar requisitos para granjas de aves y cerdos.",
+  "Permisos del municipio y posibles molestias a vecinos (olores, aguas).",
+  "Seguro subsidiado (bovinos/porcinos) en BanEcuador.",
+  "Crédito BanEcuador 7x7 (requiere registro RNA o AFC del MAG).",
+  "Comprador asegurado antes de comprar.",
+  "Consultar a un contador sobre impuestos."
+];
+
+/* ================= ESTADO (localStorage) ================= */
+const KEY = "esBuenNegocio.v1";
+function cargar(){
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && typeof s === "object") return s; }catch(e){}
+  return null;
+}
+const estado = Object.assign({animal:"torete", valores:{}, banco:"", check:{}}, cargar() || {});
+if(!ANIMALES.some(a => a.id === estado.animal)) estado.animal = "torete";
+function guardar(){ try{ localStorage.setItem(KEY, JSON.stringify(estado)); }catch(e){} }
+
+/* ================= FORMATO ================= */
+const r2 = x => Math.round((x + Number.EPSILON) * 100) / 100;
+function miles(s){ return s.replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+function fmt(x, forzarDec){
+  if(!isFinite(x)) return "—";
+  x = r2(x);
+  const neg = x < 0; const a = Math.abs(x);
+  const cent = Math.round(a * 100) % 100;
+  const dec = forzarDec || (a < 100 && cent !== 0);
+  const ent = Math.floor(dec ? a : Math.round(a));
+  let s = "$" + miles(String(ent));
+  if(dec) s += "," + String(cent).padStart(2, "0");
+  return (neg ? "−" : "") + s;
+}
+function fmtSigno(x){ return (r2(x) > 0 ? "+" : "") + fmt(x); }
+function num(x){ // número simple para mostrar (sin $)
+  x = r2(x); const a = Math.abs(x); const cent = Math.round(a*100)%100;
+  let s = miles(String(Math.floor(a))); if(cent) s += "," + String(cent).padStart(2,"0").replace(/0$/,"");
+  return (x<0?"−":"") + s;
+}
+function parse(txt){
+  if(txt == null) return NaN;
+  let s = String(txt).trim().replace(/[\s$%]/g, "");
+  if(s === "") return NaN;
+  if(s.includes(",") && s.includes(".")){
+    if(s.lastIndexOf(",") > s.lastIndexOf(".")) s = s.replace(/\./g,"").replace(",", ".");
+    else s = s.replace(/,/g, "");
+  } else if(s.includes(",")) s = s.replace(",", ".");
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+  if(!/^-?\d*\.?\d*$/.test(s)) return NaN;
+  return parseFloat(s);
+}
+
+/* ================= CÁLCULO ================= */
+function calcular(v){
+  const {n, compra, inicial, mant, meses, venta, ingreso} = v;
+  const banco = v.banco / 100;
+  const pones = (compra + inicial) * n;
+  const gastoMes = mant * n;
+  const gastoSem = mant * n * 12 / 52;
+  const gastoTotal = mant * n * meses;
+  const recibes = (venta + ingreso * meses) * n;
+  const gan = r2(recibes - pones - gastoTotal);
+  const base = pones + gastoTotal;
+  const por100 = base === 0 ? 0 : 100 * recibes / base;
+  const bancoD = r2(base * (Math.pow(1 + banco, meses / 12) - 1));
+  const exigeD = r2(base * (Math.pow(1 + banco + PRIMA, meses / 12) - 1));
+  let nivel, veredicto;
+  if(gan < 0){ nivel = "rojo"; veredicto = "MALA INVERSIÓN: pierdes dinero"; }
+  else if(gan < bancoD){ nivel = "rojo"; veredicto = "MALA INVERSIÓN: el banco te paga más sin ningún riesgo"; }
+  else if(gan < exigeD){ nivel = "ambar"; veredicto = "DUDOSA: ganas, pero poco para el riesgo que corres"; }
+  else { nivel = "verde"; veredicto = "BUENA INVERSIÓN con estos datos"; }
+  const minNoPerder = base / n - ingreso * meses;
+  const minBuena = (base + exigeD) / n - ingreso * meses;
+  const maxGasto = (venta + ingreso * meses - compra - inicial - exigeD / n) / meses;
+  const curva = [];
+  for(let k = 0; k <= 24; k++){
+    const m = k * meses / 20; // = k * meses * 1.2 / 24
+    const mm = Math.min(m, meses);
+    curva.push({
+      m,
+      negocio: -(compra + inicial) * n + (ingreso - mant) * n * mm + (m >= meses ? venta * n : 0),
+      banco: base * (Math.pow(1 + banco, mm / 12) - 1)
+    });
+  }
+  return {pones, gastoMes, gastoSem, gastoTotal, recibes, gan, por100, bancoD, exigeD, base,
+          nivel, veredicto, minNoPerder, minBuena, maxGasto, curva};
+}
+
+function sugeridos(a){ return Object.assign({}, a.d, {banco: BANCO_SUG}); }
+function animalActual(){ return ANIMALES.find(a => a.id === estado.animal); }
+function valoresActuales(){
+  const a = animalActual(); const sug = sugeridos(a); const guard = estado.valores[a.id] || {};
+  const v = {}; const malos = {};
+  for(const c of CAMPOS){
+    const txt = c.k === "banco" ? estado.banco : guard[c.k];
+    const p = parse(txt);
+    const vacio = txt == null || String(txt).trim() === "";
+    let ok = !vacio && isFinite(p) && p >= 0 && (c.min == null || p >= c.min);
+    if(ok && c.entero && Math.abs(p - Math.round(p)) > 1e-9) ok = false;
+    if(!vacio && !ok) malos[c.k] = true;
+    v[c.k] = ok ? p : sug[c.k];
+  }
+  return {v, malos};
+}
+
+/* ================= UI: ANIMALES ================= */
+const $ = id => document.getElementById(id);
+function pintarAnimales(){
+  $("animales").innerHTML = ANIMALES.map(a =>
+    `<button type="button" class="animal" data-id="${a.id}" aria-pressed="${a.id===estado.animal}">
+       <span class="emo" aria-hidden="true">${a.emoji}</span><span class="nom">${a.corto}</span></button>`).join("");
+}
+$("animales").addEventListener("click", e => {
+  const b = e.target.closest(".animal"); if(b) elegir(b.dataset.id);
+});
+function elegir(id, irADatos){
+  if(id === estado.animal){ if(irADatos) $("datos").scrollIntoView(); return; }
+  estado.animal = id; guardar();
+  document.querySelectorAll(".animal").forEach(b => b.setAttribute("aria-pressed", b.dataset.id === id));
+  const cajas = [$("explica"), $("resBox"), $("metas")];
+  cajas.forEach(c => c.classList.add("fading"));
+  setTimeout(() => {
+    pintarExplica(); pintarCampos(); actualizar(); pintarPorAnimal();
+    cajas.forEach(c => c.classList.remove("fading"));
+  }, 180);
+  if(irADatos) $("datos").scrollIntoView();
+}
+function pintarExplica(){
+  const a = animalActual();
+  $("explica").innerHTML = `<div class="big" aria-hidden="true">${a.emoji}</div>
+    <div><b>${a.nombre}</b><br>${a.que}</div>`;
+}
+
+/* ================= UI: CAMPOS ================= */
+function pintarCampos(){
+  const a = animalActual(); const sug = sugeridos(a); const guard = estado.valores[a.id] || {};
+  $("campos").innerHTML = CAMPOS.map(c => {
+    const val = c.k === "banco" ? estado.banco : (guard[c.k] ?? "");
+    const tip = c.tip ? ` <button class="info" type="button" data-tip="tip_${c.k}" aria-label="Explicación">ⓘ</button>` : "";
+    return `<div class="campo" id="c_${c.k}">
+      <label for="i_${c.k}">${c.lab}${tip}</label>
+      ${c.tip ? `<div class="tip" id="tip_${c.k}">${c.tip}</div>` : ""}
+      ${c.ayuda ? `<span class="ayuda">${c.ayuda}</span>` : ""}
+      <div class="inp">${c.pre ? `<span>${c.pre}</span>` : ""}
+        <input id="i_${c.k}" data-k="${c.k}" type="text" inputmode="decimal" autocomplete="off"
+          placeholder="${num(sug[c.k])}  (sugerido)" value="${String(val).replace(/"/g,"&quot;")}">
+        ${c.suf ? `<span>${c.suf}</span>` : ""}</div>
+      <div class="err">Revisa este dato${c.entero ? " (número entero, 1 o más)" : c.min ? " (debe ser mayor que 0)" : ""}. Mientras tanto usamos el sugerido: ${num(sug[c.k])}.</div>
+    </div>`;
+  }).join("");
+}
+$("campos").addEventListener("input", e => {
+  const k = e.target.dataset.k; if(!k) return;
+  if(k === "banco") estado.banco = e.target.value;
+  else { const id = estado.animal; (estado.valores[id] = estado.valores[id] || {})[k] = e.target.value; }
+  guardar(); actualizar();
+});
+$("reset").addEventListener("click", () => {
+  delete estado.valores[estado.animal]; estado.banco = ""; guardar(); pintarCampos(); actualizar();
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-tip]"); if(!b) return;
+  e.preventDefault(); $(b.dataset.tip).classList.toggle("open");
+});
+
+/* ================= UI: RESULTADO ================= */
+let res = null, vAct = null;
+function actualizar(){
+  const {v, malos} = valoresActuales(); vAct = v;
+  CAMPOS.forEach(c => { const el = $("c_" + c.k); if(el) el.classList.toggle("mal", !!malos[c.k]); });
+  const r = res = calcular(v);
+  $("vPones").textContent = fmt(r.pones);
+  $("vMes").textContent = fmt(r.gastoMes);
+  $("vSem").textContent = "≈ " + fmt(r.gastoSem) + " por semana";
+  $("vQueda").textContent = fmtSigno(r.gan);
+  $("vQuedaSub").textContent = "Recibes " + fmt(r.recibes) + " en total";
+  $("tQueda").className = "t " + (r.gan < 0 ? "pierde" : r.gan > 0 ? "gana" : "");
+  $("vPor100").textContent = fmt(Math.round(r.por100));
+  $("vPor100Sub").textContent = r.por100 >= 100 ? "recuperas todo y algo más" : "no recuperas lo que pusiste";
+  $("tPor100").className = "t " + (Math.round(r.por100) < 100 ? "pierde" : Math.round(r.por100) > 100 ? "gana" : "");
+
+  const s = $("semaforo"); s.className = "semaforo " + r.nivel;
+  s.querySelector(".r").classList.toggle("on", r.nivel === "rojo");
+  s.querySelector(".a").classList.toggle("on", r.nivel === "ambar");
+  s.querySelector(".v").classList.toggle("on", r.nivel === "verde");
+  const icono = {rojo:"🔴", ambar:"🟡", verde:"🟢"}[r.nivel];
+  $("veredicto").textContent = icono + " " + r.veredicto;
+  $("frase").textContent = frase(r);
+
+  const tiempo = meses(v.meses);
+  $("comparar").innerHTML =
+    `<div>🏦 Si pusieras esos ${fmt(r.base)} en una póliza al ${num(v.banco)}% por ${tiempo}, ganarías <b>${fmt(r.bancoD)}</b> sin ningún riesgo.</div>
+     <div>⚖️ Para que valga la pena el riesgo (animales que se enferman, precios que bajan) deberías ganar al menos <b>${fmt(r.exigeD)}</b>
+       <button class="info" type="button" data-tip="tipPrima" aria-label="¿Por qué?">ⓘ</button></div>
+     <div class="tip" id="tipPrima">Con animales puedes perder (enfermedades, robos, precios bajos). Por eso a lo que paga el banco le sumamos un <b>8% al año</b> extra como “pago por el riesgo”. Los financieros lo llaman <i>prima de riesgo</i>. Si ganas más que eso, el negocio vale la pena.</div>
+     <div>Tú ganarías: <b class="${r.gan<0?"no":"ok"}">${fmtSigno(r.gan)}</b></div>`;
+
+  $("formulas").innerHTML = `
+    <p>💵 <b>Pones al inicio</b> = (precio + gastos de una vez) × animales = (${fmt(v.compra)} + ${fmt(v.inicial)}) × ${num(v.n)} = <b>${fmt(r.pones)}</b></p>
+    <p>📅 <b>Gasto total de mantener</b> = gasto mensual × animales × meses = ${fmt(v.mant)} × ${num(v.n)} × ${num(v.meses)} = <b>${fmt(r.gastoTotal)}</b></p>
+    <p>🤲 <b>Lo que recibes</b> = (venta + ingreso mensual × meses) × animales = (${fmt(v.venta)} + ${fmt(v.ingreso)} × ${num(v.meses)}) × ${num(v.n)} = <b>${fmt(r.recibes)}</b></p>
+    <p>✅ <b>Te queda</b> = lo que recibes − lo que pones − gastos = <b>${fmtSigno(r.gan)}</b></p>
+    <p>🔁 <b>De cada $100</b> = 100 × lo que recibes ÷ (lo que pones + gastos) = <b>${fmt(Math.round(r.por100))}</b></p>
+    <p>🏦 <b>Banco</b>: lo mismo en una póliza al ${num(v.banco)}% anual durante ${tiempo} = <b>${fmt(r.bancoD)}</b></p>
+    <p>⚖️ <b>Mínimo que vale la pena</b>: banco + 8% anual por el riesgo (${num(v.banco + PRIMA*100)}% al año) = <b>${fmt(r.exigeD)}</b></p>
+    <p class="muted">Semáforo: 🔴 si pierdes o si ganas menos que el banco · 🟡 si ganas más que el banco pero menos que el mínimo · 🟢 si ganas el mínimo o más.</p>`;
+
+  pintarMetas(v, r);
+  pintarGraficos(r);
+  pintarRanking();
+  const a = animalActual();
+  $("mini").textContent = `${a.emoji} ${icono} ${fmtSigno(r.gan)} · recuperas ${fmt(Math.round(r.por100))} de $100`;
+}
+function meses(m){ return num(m) + (r2(m) === 1 ? " mes" : " meses"); }
+function frase(r){
+  const dif = Math.abs(r.gan);
+  const cola = r.gan < 0 ? `${fmt(dif)} MENOS de lo que pusiste.` :
+               r.gan > 0 ? `${fmt(dif)} MÁS de lo que pusiste.` : "exactamente lo mismo que pusiste ($0 de ganancia).";
+  return `Pondrías ${fmt(r.base)} entre compra y gastos, y al final tendrías ${cola}`;
+}
+
+function pintarMetas(v, r){
+  const a = animalActual();
+  const hoyVenta = `Hoy pusiste ${fmt(v.venta)}`;
+  const est = (ok) => ok ? `<span class="ok">✔ Ya lo cumples</span>` : `<span class="no">✘ Aún no</span>`;
+  let gastoTxt, gastoEst;
+  if(r.maxGasto < 0){
+    gastoTxt = `<div class="num">Ni con $0</div><div>Aunque mantenerlo no te costara nada, no alcanzaría: tienes que vender más caro o comprar más barato.</div>`;
+    gastoEst = est(false);
+  } else {
+    gastoTxt = `<div class="num">${fmt(r.maxGasto)}</div><div>es lo máximo que puedes gastar al mes por animal para que sea buena inversión.</div>`;
+    gastoEst = est(v.mant <= r.maxGasto + 0.005);
+  }
+  $("metas").innerHTML = `
+    <div class="meta"><div class="ico">🏷️</div><div>
+      <div>Vende cada animal en al menos</div><div class="num">${fmt(r.minNoPerder)}</div><div>para <b>no perder</b>.</div>
+      <div class="hoy">${hoyVenta} · ${est(v.venta >= r.minNoPerder - 0.005)}</div></div></div>
+    <div class="meta"><div class="ico">🎯</div><div>
+      <div>Vende cada animal en al menos</div><div class="num">${fmt(r.minBuena)}</div><div>para que sea <b>buena inversión</b> 🟢.</div>
+      <div class="hoy">${hoyVenta} · ${est(v.venta >= r.minBuena - 0.005)}</div></div></div>
+    <div class="meta"><div class="ico">🧾</div><div>
+      ${gastoTxt}
+      <div class="hoy">Hoy pusiste ${fmt(v.mant)} al mes · ${gastoEst}</div></div></div>`;
+  $("consejo").innerHTML = `<b>💡 Consejo clave (${a.emoji} ${a.corto}):</b> ${a.consejo}`;
+}
+
+/* ================= GRÁFICOS ================= */
+let gLinea = null, gBarras = null;
+function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function hexA(hex, a){
+  const h = hex.replace("#",""); const n = parseInt(h.length === 3 ? h.split("").map(c=>c+c).join("") : h, 16);
+  return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;
+}
+function compacto(x){
+  const a = Math.abs(x); const s = x < 0 ? "−" : "";
+  if(a >= 1000) return s + "$" + num(Math.round(a/100)/10) + " mil";
+  return s + "$" + num(Math.round(a));
+}
+function sinChart(){
+  ["gLinea","gBarras"].forEach(id => {
+    const c = $(id); if(c && !c.dataset.falla){ c.dataset.falla = 1;
+      c.parentElement.insertAdjacentHTML("beforeend", `<div class="nochart">📶 Los gráficos necesitan internet la primera vez. Conéctate y recarga la página.</div>`);
+      c.style.display = "none"; }
+  });
+}
+function pintarGraficos(r){
+  if(typeof Chart === "undefined"){ if(document.readyState === "complete") sinChart(); return; }
+  const verde = css("--teal"), rojo = css("--rojo"), azul = css("--resultado"), suave = css("--suave"), texto = css("--texto"), borde = css("--borde"), naranja = "#E76F51";
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.font.size = 13;
+  Chart.defaults.color = suave;
+  const labels = r.curva.map(p => "Mes " + num(Math.round(p.m * 10) / 10));
+  const gradiente = (ctx, a) => {
+    const ch = ctx.chart, area = ch.chartArea;
+    if(!area) return a == null ? verde : hexA(verde, a);
+    const y0 = ch.scales.y.getPixelForValue(0);
+    let f = (y0 - area.top) / (area.bottom - area.top); f = Math.min(1, Math.max(0, f));
+    const g = ch.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    const cv = a == null ? verde : hexA(verde, a), cr = a == null ? rojo : hexA(rojo, a);
+    g.addColorStop(0, cv); g.addColorStop(f, cv); g.addColorStop(f, cr); g.addColorStop(1, cr);
+    return g;
+  };
+  const dLinea = [
+    {label:"Tu negocio", data:r.curva.map(p => r2(p.negocio)), borderColor:c => gradiente(c), borderWidth:3.5,
+     pointRadius:0, pointHoverRadius:5, tension:0, fill:{target:{value:0}, above:hexA(verde,.16), below:hexA(rojo,.16)}},
+    {label:"Si lo pones en el banco", data:r.curva.map(p => r2(p.banco)), borderColor:azul, borderDash:[7,5], borderWidth:2.5, pointRadius:0, fill:false},
+    {label:"Cero", data:r.curva.map(() => 0), borderColor:suave, borderWidth:1.5, pointRadius:0, fill:false}
+  ];
+  if(!gLinea){
+    gLinea = new Chart($("gLinea"), {type:"line", data:{labels, datasets:dLinea},
+      options:{responsive:true, maintainAspectRatio:false, animation:{duration:350}, interaction:{mode:"index", intersect:false},
+        plugins:{legend:{display:false}, tooltip:{filter:i => i.datasetIndex < 2, callbacks:{label:i => " " + i.dataset.label + ": " + fmt(i.parsed.y)}}},
+        scales:{x:{grid:{display:false}, ticks:{maxTicksLimit:6, maxRotation:0}},
+                y:{grid:{color:hexA(borde.startsWith("#")?borde:"#DDD8CC",.9)}, ticks:{callback:v => compacto(v), maxTicksLimit:7}}}}});
+  } else {
+    gLinea.data.labels = labels;
+    gLinea.data.datasets.forEach((d,i) => { d.data = dLinea[i].data; if(i) d.borderColor = dLinea[i].borderColor; });
+    gLinea.data.datasets[0].fill = dLinea[0].fill;
+    gLinea.update();
+  }
+  const barras = [r.pones, r.gastoTotal, r.recibes, r.gan];
+  const colores = [azul, naranja, verde, r.gan < 0 ? rojo : verde];
+  const etiquetas = ["Pones al inicio", "Gastos de mantener", "Lo que recibes", "Te queda"];
+  if(!gBarras){
+    gBarras = new Chart($("gBarras"), {type:"bar",
+      data:{labels:etiquetas, datasets:[{data:barras.map(r2), backgroundColor:colores, borderRadius:8, maxBarThickness:70}]},
+      options:{responsive:true, maintainAspectRatio:false, animation:{duration:350},
+        plugins:{legend:{display:false}, tooltip:{callbacks:{label:i => " " + fmt(i.parsed.y)}}},
+        scales:{x:{grid:{display:false}, ticks:{color:texto, font:{weight:"600"}, autoSkip:false, maxRotation:0,
+                  callback:function(v){ const l = this.getLabelForValue(v); return l.split(" ").length > 2 ? [l.split(" ").slice(0,2).join(" "), l.split(" ").slice(2).join(" ")] : l; }}},
+                y:{ticks:{callback:v => compacto(v), maxTicksLimit:6}}}}});
+  } else {
+    gBarras.data.datasets[0].data = barras.map(r2);
+    gBarras.data.datasets[0].backgroundColor = colores;
+    gBarras.update();
+  }
+}
+function rehacerGraficos(){ if(gLinea){gLinea.destroy(); gLinea=null;} if(gBarras){gBarras.destroy(); gBarras=null;} if(res) pintarGraficos(res); }
+window.addEventListener("load", () => { if(typeof Chart === "undefined") sinChart(); else rehacerGraficos(); });
+if(window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", rehacerGraficos);
+
+/* ================= RANKING ================= */
+const RANK = ANIMALES.map(a => ({a, r:calcular(sugeridos(a))})).sort((x, y) => y.r.por100 - x.r.por100);
+function pintarRanking(){
+  const max = Math.max(...RANK.map(x => x.r.por100), 130);
+  const col = {rojo:"var(--rojo)", ambar:"var(--ambar)", verde:"var(--teal)"};
+  const ic = {rojo:"🔴", ambar:"🟡", verde:"🟢"};
+  $("rank").innerHTML = RANK.map((x, i) => {
+    const w = Math.max(0, x.r.por100) / max * 100;
+    return `<li><button type="button" data-id="${x.a.id}" class="${x.a.id===estado.animal?"sel":""}" aria-label="${x.a.nombre}: de cada 100 recuperas ${Math.round(x.r.por100)}">
+      <span class="pos">${i+1}</span><span class="emo" aria-hidden="true">${x.a.emoji}</span>
+      <span style="min-width:0"><span class="nm">${x.a.corto}${x.a.id===estado.animal?" ← tu elección":""}</span>
+        <span class="barra"><b style="width:${w}%;background:${col[x.r.nivel]}"></b><span class="cien" style="left:${100/max*100}%"></span></span></span>
+      <span class="der">${ic[x.r.nivel]} ${fmt(Math.round(x.r.por100))}<small>${fmtSigno(x.r.gan)}</small></span></button></li>`;
+  }).join("");
+}
+$("rank").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if(b) elegir(b.dataset.id, true); });
+
+/* ================= RECOMENDACIONES ================= */
+$("reglas").innerHTML = REGLAS.map(([t, s]) =>
+  `<li>${t} <span class="estrellas" aria-label="${s} de 3 estrellas">${"⭐".repeat(s)}</span></li>`).join("");
+function pintarPorAnimal(){
+  const abiertos = new Set([...document.querySelectorAll("#porAnimal details[open]")].map(d => d.dataset.id));
+  $("porAnimal").innerHTML = ANIMALES.map(a =>
+    `<details class="acc" data-id="${a.id}" ${a.id===estado.animal || abiertos.has(a.id) ? "open" : ""}>
+      <summary>${a.emoji} Consejos: ${a.nombre}${a.id===estado.animal ? " (tu elección)" : ""}</summary>
+      <ul class="tips"><li><b>Clave:</b> ${a.consejo}</li>${a.tips.map(t => `<li>${t}</li>`).join("")}</ul></details>`).join("");
+}
+
+/* ================= CHECKLIST ================= */
+function pintarCheck(){
+  $("check").innerHTML = CHECKLIST.map((t, i) =>
+    `<li><label><input type="checkbox" data-i="${i}" ${estado.check[i] ? "checked" : ""}><span>${t}</span></label></li>`).join("");
+  contarCheck();
+}
+function contarCheck(){
+  const n = CHECKLIST.filter((_, i) => estado.check[i]).length;
+  $("checkCount").textContent = `${n} de ${CHECKLIST.length} listos` + (n === CHECKLIST.length ? " 🎉" : "");
+  $("checkBar").style.width = (n / CHECKLIST.length * 100) + "%";
+}
+$("check").addEventListener("change", e => {
+  const i = e.target.dataset.i; if(i == null) return;
+  if(e.target.checked) estado.check[i] = true; else delete estado.check[i];
+  guardar(); contarCheck();
+});
+
+/* ================= COMPARTIR ================= */
+$("share").addEventListener("click", async () => {
+  const a = animalActual(), r = res, v = vAct;
+  const url = location.origin + location.pathname;
+  const icono = {rojo:"🔴", ambar:"🟡", verde:"🟢"}[r.nivel];
+  const texto = `${a.emoji} ${a.nombre} (${num(v.n)} ${v.n === 1 ? "animal" : "animales"}, ${meses(v.meses)})\n` +
+    `${icono} ${r.veredicto}\n` +
+    `💵 Pones al inicio: ${fmt(r.pones)}\n📅 Gasto por mes: ${fmt(r.gastoMes)}\n` +
+    `✅ Al final te queda: ${fmtSigno(r.gan)}\n🔁 De cada $100 recuperas ${fmt(Math.round(r.por100))}\n\n` +
+    `Calcula el tuyo en ¿Es buen negocio?:`;
+  if(navigator.share){
+    try{ await navigator.share({title:"¿Es buen negocio?", text:texto, url}); return; }
+    catch(e){ if(e && e.name === "AbortError") return; }
+  }
+  window.open("https://wa.me/?text=" + encodeURIComponent(texto + " " + url), "_blank", "noopener");
+});
+
+/* ================= NAVEGACIÓN ================= */
+const navLinks = [...document.querySelectorAll("nav.abajo a")];
+const vistos = new Map();
+if("IntersectionObserver" in window){
+  const io = new IntersectionObserver(ents => {
+    ents.forEach(en => vistos.set(en.target.id, en.intersectionRatio));
+    let mejor = null, val = 0;
+    vistos.forEach((ratio, id) => { if(ratio > val){ val = ratio; mejor = id; } });
+    if(mejor){ const s = mejor === "mejorar" ? "resultado" : mejor;
+      navLinks.forEach(l => l.classList.toggle("act", l.dataset.s === s)); }
+    const verRes = (vistos.get("resultado") || 0) > 0.02;
+    $("mini").classList.toggle("show", !verRes && (vistos.get("datos") || 0) > 0.12);
+  }, {threshold:[0, .02, .05, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]});
+  ["animal","datos","resultado","mejorar","ranking","consejos"].forEach(id => io.observe($(id)));
+}
+
+/* ================= INICIO ================= */
+pintarAnimales(); pintarExplica(); pintarCampos(); pintarPorAnimal(); pintarCheck(); actualizar();
+
+if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")){
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
