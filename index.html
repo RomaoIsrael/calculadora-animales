@@ -845,7 +845,14 @@ if("IntersectionObserver" in window){
 pintarAnimales(); pintarExplica(); pintarCampos(); pintarPorAnimal(); pintarCheck(); actualizar();
 
 if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")){
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  // Si llega una versión nueva de la app, recarga una sola vez para mostrarla.
+  const habiaVersion = !!navigator.serviceWorker.controller;
+  let recargado = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if(habiaVersion && !recargado){ recargado = true; location.reload(); }
+  });
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js", {updateViaCache:"none"})
+    .then(reg => reg.update()).catch(() => {}));
 }
 </script>
 </body>
